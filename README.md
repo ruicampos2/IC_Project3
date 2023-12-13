@@ -1,3 +1,3 @@
 # IC_Project3
 
-#Exercicios trab2 de Informação e Codificação
+#Exercicios trab3 de Informação e Codificação

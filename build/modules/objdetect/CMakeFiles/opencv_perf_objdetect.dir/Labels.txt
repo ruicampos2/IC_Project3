@@ -1,0 +1,33 @@
+# Target labels
+ Main
+ opencv_objdetect
+ PerfTest
+# Source files and their labels
+/home/ruicampos/Desktop/IC/IC_Project2/opencv/modules/objdetect/perf/opencl/perf_cascades.cpp
+ Main
+ opencv_objdetect
+ PerfTest
+/home/ruicampos/Desktop/IC/IC_Project2/opencv/modules/objdetect/perf/opencl/perf_hogdetect.cpp
+ Main
+ opencv_objdetect
+ PerfTest
+/home/ruicampos/Desktop/IC/IC_Project2/opencv/modules/objdetect/perf/perf_aruco.cpp
+ Main
+ opencv_objdetect
+ PerfTest
+/home/ruicampos/Desktop/IC/IC_Project2/opencv/modules/objdetect/perf/perf_barcode.cpp
+ Main
+ opencv_objdetect
+ PerfTest
+/home/ruicampos/Desktop/IC/IC_Project2/opencv/modules/objdetect/perf/perf_main.cpp
+ Main
+ opencv_objdetect
+ PerfTest
+/home/ruicampos/Desktop/IC/IC_Project2/opencv/modules/objdetect/perf/perf_qrcode_pipeline.cpp
+ Main
+ opencv_objdetect
+ PerfTest
+/home/ruicampos/Desktop/IC/IC_Project2/opencv/modules/objdetect/perf/perf_precomp.hpp
+ Main
+ opencv_objdetect
+ PerfTest
