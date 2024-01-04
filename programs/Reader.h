@@ -19,7 +19,7 @@ public:
         std::getline(file_, line);
 
         // extract width and height
-        sscanf(line.c_str(), "YUV4MPEG2 W%d H%d F%d:%d", &width_, &height_, &frame_rate_1_, &frame_rate_2_);
+        sscanf(line.c_str(), " W%d H%d F%d:%d", &width_, &height_, &frame_rate_1_, &frame_rate_2_);
         // check if 'C' is in the line
         if (strchr(line.c_str(), 'C') == NULL) {
             color_space_ = "420";
