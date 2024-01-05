@@ -261,7 +261,6 @@ int main(int argc, char* argv[]){
             }
         }
 
-        // Quantization of residuals
         for (long unsigned int i = 0; i < Yresiduals.size(); i++) {
             Yresiduals[i] = Yresiduals[i] >> quantization;
         }

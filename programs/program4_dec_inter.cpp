@@ -180,13 +180,11 @@ int main(int argc, char* argv[]){
     //start the timer
     start2 = clock();
 
-    //DECODE YUV VALUES
     Golomb g;
     vector<int> Ydecoded = g.decodeMultiple(Yencodedstring, Ym, blockSize);
     vector<int> Cbdecoded = g.decodeMultiple(Cbencodedstring, Cbm, blockSize);
     vector<int> Crdecoded = g.decodeMultiple(Crencodedstring, Crm, blockSize);
 
-    //undo the quantization of YUV decoded values back to the original size
     int frameIndex = 0;
     int total = padded_height*padded_width;
 
@@ -194,7 +192,6 @@ int main(int argc, char* argv[]){
         if (i % total == 0 and i != 0) {
                 frameIndex++;
         }
-        //Only undo quantization if it is not a keyframe
         if((frameIndex !=0) && (frameIndex % keyFramePeriod != 0)){
             if(quantization != 1){
             

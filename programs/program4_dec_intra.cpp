@@ -179,7 +179,6 @@ int main(int argc, char* argv[]){
         VMat = Mat(height, width, CV_8UC1);
     }
 
-    //undo the quantization of YUV decoded values back to the original size
     for (long unsigned int i = 0; i < Ydecoded.size(); i++){
         if(quantization != 1){
             Ydecoded[i] = Ydecoded[i] << 1;

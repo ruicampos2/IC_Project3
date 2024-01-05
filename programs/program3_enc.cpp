@@ -152,12 +152,10 @@ int main(int argc, char* argv[]){
     int totalCbresiduals = 0;
     int totalCrresiduals = 0;
 
-    //reading frames
+    // frames readed
     while(!feof(input)){
         numFrames++;
-        //read the frame line
         fgets(line, 100, input);
-        //read the Y data  (Height x Width)
         for(int i = 0; i < width * height; i++){
             Y[i] = fgetc(input);   
             if(Y[i] < 0) {
@@ -167,9 +165,8 @@ int main(int argc, char* argv[]){
             }
         }
         if (finish) break;
-        //U AND V DATA
-        for(int i = 0; i < width * height / 4; i++) U[i] = fgetc(input); //read the U data (Height/2 x Width/2)
-        for(int i = 0; i < width * height / 4; i++) V[i] = fgetc(input); //read the V data (Height/2 x Width/2)
+        for(int i = 0; i < width * height / 4; i++) U[i] = fgetc(input); 
+        for(int i = 0; i < width * height / 4; i++) V[i] = fgetc(input); 
         
 
         //Create Mat objects for Y, U, and V
@@ -187,24 +184,21 @@ int main(int argc, char* argv[]){
                 }
             }
         }
-        //KEYFRAME SAVING
-        //if its the first frame, set it as the keyframe and copy the data into the keyframe Mat objects
+
+        //KEYFRAMES SAVED
         if(frameIndex==0){
             keyYmat = YMat.clone();
             keyUmat = UMat.clone();
             keyVmat = VMat.clone();
-        } //else if the current keyFrame is a multiple of keyFramePeriod, set the current frame as the keyframe and copy the data into the keyframe Mat objects
+        }
         else if(frameIndex % keyFramePeriod == 0){
             keyYmat = YMat.clone();
             keyUmat = UMat.clone();
             keyVmat = VMat.clone();
         }
 
-        //PREDICTION 
-        //INTRA-FRAME PREDICTION (keyFrame)
-        //if its the first frame, or if the current frame is a keyframe, use intra-frame prediction
+
         if(frameIndex==0 || (frameIndex % keyFramePeriod==0)){
-            //go pixel by pixel through the Y, U, and V Mat objects to make predictions
             for(int i = 0; i < height; i++){
                 for(int j = 0; j < width; j++){
                     int Y = YMat.at<uchar>(i, j);
@@ -213,7 +207,6 @@ int main(int argc, char* argv[]){
                     int Yerror = 0;
                     int Uerror = 0;
                     int Verror = 0;
-                    //if its the first pixel of the image, do not use prediction
                     if (i == 0 && j == 0) {
                         Yerror = Y;
                         Uerror = U;

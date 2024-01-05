@@ -40,7 +40,7 @@ int main(int argc, char* argv[]){
 
     //Check for correct number of arguments
     if(argc != 6){
-        cout << "Usage: " << argv[0] << " <input file> <output file> <block size> <search area> <key-frame period>" << endl;
+        cout << "Usage: " << argv[0] << " <input file> <output file> <block size> <search area> <k>" << endl;
         return 1;
     }
 
@@ -251,12 +251,7 @@ int main(int argc, char* argv[]){
                 }
             }
         } else {
-            //INTER-FRAME PREDICTION (non-keyFrame, block by block)
-            //motion compensation (block by block) with the keyframe
-            //go block by block through the Y, U, and V Mat objects to make predictions
-            //for each block calculate the motion vector
 
-            //calculate the padding, check if width and height are divisible by block size
             int padded_width = width;
             int padded_height = height;
             if (width % blockSize != 0) {
@@ -266,9 +261,6 @@ int main(int argc, char* argv[]){
                 padded_height = height + (blockSize - (height % blockSize));
             }
 
-            //keyFrame Mat is saved in keyYmat, keyUmat, keyVmat
-
-            //first thing to do is to create a Mat object for all of the frame, combining the Y, U and V Mat objects
             Mat frame = Mat(padded_height, padded_width, CV_8UC3);
             Mat keyFrameMat = Mat(padded_height, padded_width, CV_8UC3);
             for (int i = 0; i < padded_height; i++){

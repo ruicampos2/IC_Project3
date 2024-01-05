@@ -478,7 +478,6 @@ int main(int argc, char* argv[]){
             }
         }
 
-        //Quantization and encoding
         Golomb g;
         int m_index = 0;
         for (long unsigned int i = 0; i < Yresiduals.size(); i++) {
