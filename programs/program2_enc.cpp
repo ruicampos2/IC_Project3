@@ -112,8 +112,7 @@ int main(int argc, char* argv[]){
         padded_height = height + (blockSize - (height % blockSize));
     }
 
-    //start a timer
-    clock_t start = clock();
+   
 
     vector<int> Ym_vector;
     vector<int> Cbm_vector;
@@ -144,7 +143,7 @@ int main(int argc, char* argv[]){
         
     char line[100]; //Read the line after the header
     fgets(line, 100, input);
-    clock_t start2 = clock();
+   
 
     //keyFrame variables
     int frameIndex = 0;
@@ -340,14 +339,14 @@ int main(int argc, char* argv[]){
                     //predict the current block using the motion vector
                     for (int i = 0; i < blockSize; i++){ //height
                         for (int j = 0; j < blockSize; j++){ //width
-                            int errorY = frame.at<Vec3b>(bh*blockSize + i, bw*blockSize + j)[0] - keyFrameMat.at<Vec3b>(bh*blockSize + i + motionVectorY, bw*blockSize + j + motionVectorX)[0];
-                            int errorCb = frame.at<Vec3b>(bh*blockSize + i, bw*blockSize + j)[1] - keyFrameMat.at<Vec3b>(bh*blockSize + i + motionVectorY, bw*blockSize + j + motionVectorX)[1];
-                            int errorCr = frame.at<Vec3b>(bh*blockSize + i, bw*blockSize + j)[2] - keyFrameMat.at<Vec3b>(bh*blockSize + i + motionVectorY, bw*blockSize + j + motionVectorX)[2];
-                            Yresiduals.push_back(errorY);
+                            int y = frame.at<Vec3b>(bh*blockSize + i, bw*blockSize + j)[0] - keyFrameMat.at<Vec3b>(bh*blockSize + i + motionVectorY, bw*blockSize + j + motionVectorX)[0];
+                            int Cb = frame.at<Vec3b>(bh*blockSize + i, bw*blockSize + j)[1] - keyFrameMat.at<Vec3b>(bh*blockSize + i + motionVectorY, bw*blockSize + j + motionVectorX)[1];
+                            int Cr = frame.at<Vec3b>(bh*blockSize + i, bw*blockSize + j)[2] - keyFrameMat.at<Vec3b>(bh*blockSize + i + motionVectorY, bw*blockSize + j + motionVectorX)[2];
+                            Yresiduals.push_back(y);
                             //only save the Cb and Cr residuals every 2 pixels 
                             if (i % 2 == 0 and j % 2 == 0){
-                                Cbresiduals.push_back(errorCb);
-                                Crresiduals.push_back(errorCr);
+                                Cbresiduals.push_back(Cb);
+                                Crresiduals.push_back(Cr);
                             }
                         }
                     }
@@ -409,30 +408,30 @@ int main(int argc, char* argv[]){
             }
         }
 
-        Golomb g;
-        int m_index = 0;
+        Golomb gol;
+        int m = 0;
         for (long unsigned int i = 0; i < Yresiduals.size(); i++) {
             if (i % blockSize == 0 and i != 0) {
-                Ym.push_back(Ym_vector[m_index]);
-                m_index++;
+                Ym.push_back(Ym_vector[m]);
+                m++;
             }
-            Yencoded += g.encode(Yresiduals[i], Ym_vector[m_index]);
+            Yencoded += gol.encode(Yresiduals[i], Ym_vector[m]);
             if (i == Yresiduals.size() - 1) {
-                Ym.push_back(Ym_vector[m_index]);
+                Ym.push_back(Ym_vector[m]);
             }  
         }
-        m_index = 0;
+        m = 0;
         for (long unsigned int i = 0; i < Cbresiduals.size(); i++) {
             if (i % blockSize == 0 and i != 0) {
-                Cbm.push_back(Cbm_vector[m_index]);
-                Crm.push_back(Crm_vector[m_index]);
-                m_index++;
+                Cbm.push_back(Cbm_vector[m]);
+                Crm.push_back(Crm_vector[m]);
+                m++;
             }
-            Cbencoded += g.encode(Cbresiduals[i], Cbm_vector[m_index]);
-            Crencoded += g.encode(Crresiduals[i], Crm_vector[m_index]);
+            Cbencoded += gol.encode(Cbresiduals[i], Cbm_vector[m]);
+            Crencoded += gol.encode(Crresiduals[i], Crm_vector[m]);
             if (i == Cbresiduals.size() - 1) {
-                Cbm.push_back(Cbm_vector[m_index]);
-                Crm.push_back(Crm_vector[m_index]);
+                Cbm.push_back(Cbm_vector[m]);
+                Crm.push_back(Crm_vector[m]);
             }
         }
         Ym_vector = vector<int>();
@@ -456,8 +455,7 @@ int main(int argc, char* argv[]){
         Cbencoded = "";
         Crencoded = "";
         frameIndex++;
-        // if (numFrames == 4) break;
-    } //end of loop for each frame
+    } 
 
 
     string motionXencoded = "";
@@ -472,67 +470,8 @@ int main(int argc, char* argv[]){
     for (long unsigned int i = 0; i < motionYencoded.length(); i++)
         encoded_motionYbits.push_back(motionYencoded[i] - '0');
 
-    clock_t end2 = clock();
-    double elapsed_secs2 = double(end2 - start2) / CLOCKS_PER_SEC * 1000;
-    cout << "Time to read, predict and encode YUV values (and m) from frame: " << elapsed_secs2 << " ms" << endl;
 
     BitStream bs(argv[2], "w");
-    vector<int> bits;
-
-    start2 = clock();
-
-    for (int i = 15; i >= 0; i--) bits.push_back((width >> i) & 1);                     //the first 16 bits are the width of the image
-    for (int i = 15; i >= 0; i--) bits.push_back((height >> i) & 1);                    //the next 16 bits are the height of the image
-    for (int i = 15; i >= 0; i--) bits.push_back((numFrames >> i) & 1);                 //the next 16 bits are the number of frames
-    for (int i = 15; i >= 0; i--) bits.push_back((colorSpace >> i) & 1);                //the next 16 bits are the color space
-    for (int i = 15; i >= 0; i--) bits.push_back((aspectRatio1 >> i) & 1);              //the next 16 bits are aspect ratio 1
-    for (int i = 15; i >= 0; i--) bits.push_back((aspectRatio2 >> i) & 1);              //the next 16 bits are aspect ratio 2
-    for (int i = 15; i >= 0; i--) bits.push_back((frameRate1 >> i) & 1);                //the next 16 bits are the frame rate 1
-    for (int i = 15; i >= 0; i--) bits.push_back((frameRate2 >> i) & 1);                //the next 16 bits are the frame rate 2
-    for (int i = 0;  i <  8; i++) bits.push_back(interlace_v[i]);                       //the next 8 bits are the interlace vector el
-    for (int i = 15;  i >= 0; i--) bits.push_back((blockSize >> i) & 1);                 //the next 8 bits are the block size
-    for (int i = 15; i >= 0; i--) bits.push_back((searchDistance >> i) & 1);            //the next 16 bits are the searchDistance
-    for (int i = 15; i >= 0; i--) bits.push_back((keyFramePeriod >> i) & 1);            //the next 16 bits are the keyFramePeriod
-    for (int i = 15; i >= 0; i--) bits.push_back((padded_width >> i) & 1);              //the next 16 bits are the padded_width
-    for (int i = 15; i >= 0; i--) bits.push_back((padded_height >> i) & 1);             //the next 16 bits are the padded_height
-    for (int i = 31; i >= 0; i--) bits.push_back((encoded_Ybits.size() >> i) & 1);      //the next 32 bits are the encoded_Ybits.size()
-    for (int i = 31; i >= 0; i--) bits.push_back((encoded_Cbbits.size() >> i) & 1);     //the next 32 bits are the encoded_Cbbits.size()
-    for (int i = 31; i >= 0; i--) bits.push_back((encoded_Crbits.size() >> i) & 1);     //the next 32 bits are the encoded_Crbits.size()
-    for (int i = 31; i >= 0; i--) bits.push_back((Ym.size() >> i) & 1);                 //the next 32 bits are the Ym.size()
-    for (int i = 31; i >= 0; i--) bits.push_back((Cbm.size() >> i) & 1);                //the next 32 bits are the Cbm.size()
-    for (int i = 31; i >= 0; i--) bits.push_back((Crm.size() >> i) & 1);                //the next 32 bits are the Crm.size()
-    for (int i = 31; i >= 0; i--) bits.push_back((encoded_motionXbits.size() >> i) & 1);     //the next 32 bits are the motionVectorXs.size()
-    for (int i = 31; i >= 0; i--) bits.push_back((encoded_motionYbits.size() >> i) & 1);     //the next 32 bits are the motionVectorYs.size()
-    for (long unsigned int i = 0; i < encoded_motionXbits.size(); i++) bits.push_back(encoded_motionXbits[i]); //the next bits are the encoded_motionXbits
-    for (long unsigned int i = 0; i < encoded_motionYbits.size(); i++) bits.push_back(encoded_motionYbits[i]); //the next bits are the encoded_motionYbits
-    for (long unsigned int i = 0; i < Ym.size(); i++) {                                 //the next bits are the Ym values
-        for (int j = 7; j >= 0; j--) bits.push_back((Ym[i] >> j) & 1);                  //the next 8 bits are the Ym value
-    }
-    for (long unsigned int i = 0; i < Cbm.size(); i++) {                                //the next bits are the Cbm values
-        for (int j = 7; j >= 0; j--) bits.push_back((Cbm[i] >> j) & 1);                 //the next 8 bits are the Cbm value
-    }
-    for (long unsigned int i = 0; i < Crm.size(); i++) {                                //the next bits are the Crm values
-        for (int j = 7; j >= 0; j--) bits.push_back((Crm[i] >> j) & 1);                 //the next 8 bits are the Crm value
-    }
-    for(long unsigned int i = 0; i < encoded_Ybits.size(); i++) bits.push_back(encoded_Ybits[i]);   //the next bits are the encoded_Ybits
-    for(long unsigned int i = 0; i < encoded_Cbbits.size(); i++) bits.push_back(encoded_Cbbits[i]); //the next bits are the encoded_Cbbits
-    for(long unsigned int i = 0; i < encoded_Crbits.size(); i++) bits.push_back(encoded_Crbits[i]); //the next bits are the encoded_Crbits
-
-    end2 = clock();
-    elapsed_secs2 = double(end2 - start2) / CLOCKS_PER_SEC * 1000;
-    cout << "Time to push back all values to bits: " << elapsed_secs2 << " ms" << endl;
-    start2 = clock();
+    cout << "File saved in opencv-bin folder time << endl;
     
-    bs.writeBits(bits);
-    bs.close();
-    end2 = clock();
-    elapsed_secs2 = double(end2 - start2) / CLOCKS_PER_SEC * 1000;
-    cout << "Time to write to bits: " << elapsed_secs2 << " ms" << endl;
-
-    //end the timer
-    clock_t end = clock();
-    double elapsed_secs = double(end - start) / CLOCKS_PER_SEC;
-    elapsed_secs = elapsed_secs * 1000;
-    cout << "Execution time: " << elapsed_secs << " ms" << endl;
-    return 0;
 }
