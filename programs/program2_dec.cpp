@@ -34,8 +34,6 @@ int main(int argc, char* argv[]){
             return a + b - c;   //otherwise, left + above - left top
     };
 
-    //start a timer
-    clock_t start = clock();
 
     if(argc != 3){
         cout << "Usage: " << argv[0] << " <input file> <output file>" << endl;
@@ -49,8 +47,7 @@ int main(int argc, char* argv[]){
     //write the header
     ofstream out(output_file, ios::out | ios::binary);
 
-    //start a new timer
-    clock_t start2 = clock();
+
     vector<int> v_width = bs.readBits(16);
     vector<int> v_height = bs.readBits(16);
     vector<int> v_num_frames = bs.readBits(16);
@@ -118,13 +115,7 @@ int main(int argc, char* argv[]){
         for (long unsigned int j = 0; j < v_Crm.size(); j++) Crm_i += v_Crm[j] * pow(2, v_Crm.size() - j - 1);
         Crm.push_back(Crm_i);
     }
-    //end the timer
-    clock_t end2 = clock();
-    double elapsed_secs2 = double(end2 - start2) / CLOCKS_PER_SEC * 1000;
-    cout << "Time to read header including m: " << elapsed_secs2 << " ms" << endl;
 
-    //start the timer
-    start2 = clock();
 
     //READING YUV VALUES
     vector<int> Ybits = bs.readBits(Ybits_size);
@@ -133,13 +124,6 @@ int main(int argc, char* argv[]){
 
     cout << Cbbits_size << endl;
     cout << Crbits_size << endl;
-
-    end2 = clock();
-    elapsed_secs2 = double(end2 - start2) / CLOCKS_PER_SEC * 1000;
-    cout << "Time to read including YUV values: " << elapsed_secs2 << " ms" << endl;
-
-    //start the timer
-    start2 = clock();
 
     string Yencodedstring = "";
     for(long unsigned int i = 0; i < Ybits.size(); i++) Yencodedstring += Ybits[i] + '0';
@@ -152,12 +136,7 @@ int main(int argc, char* argv[]){
         Crencodedstring += Crbits[i] + '0';
     }
 
-    //end the timer
-    end2 = clock();
-    elapsed_secs2 = double(end2 - start2) / CLOCKS_PER_SEC * 1000;
-    cout << "Time to parse YUV values: " << elapsed_secs2 << " ms" << endl;
-    //start the timer
-    start2 = clock();
+
 
     //DECODE YUV VALUES
     Golomb g;
@@ -166,27 +145,21 @@ int main(int argc, char* argv[]){
     vector<int> Crdecoded = g.decodeMultiple(Crencodedstring, Crm, bs_size);
 
     Mat YMat = Mat(height, width, CV_8UC1);
-    Mat UMat;
-    Mat VMat;
+    Mat u;
+    Mat v;
 
     if (color_space == 420) {
-        UMat = Mat(height/2, width/2, CV_8UC1);
-        VMat = Mat(height/2, width/2, CV_8UC1);
+        u = Mat(height/2, width/2, CV_8UC1);
+        v = Mat(height/2, width/2, CV_8UC1);
     } else if (color_space == 422) {
-        UMat = Mat(height, width/2, CV_8UC1);
-        VMat = Mat(height, width/2, CV_8UC1);
+        u = Mat(height, width/2, CV_8UC1);
+        v = Mat(height, width/2, CV_8UC1);
     } else if (color_space == 444) {
-        UMat = Mat(height, width, CV_8UC1);
-        VMat = Mat(height, width, CV_8UC1);
+        u = Mat(height, width, CV_8UC1);
+        v = Mat(height, width, CV_8UC1);
     }
 
-    //end the timer
-    end2 = clock();
-    elapsed_secs2 = double(end2 - start2) / CLOCKS_PER_SEC * 1000;
-    cout << "Time to decode YUV values: " << elapsed_secs2 << " ms" << endl;
 
-    //start the timer
-    start2 = clock();
 
     //undo the predictions
     int pixel_idx = 0;
@@ -194,35 +167,35 @@ int main(int argc, char* argv[]){
     for (int n = 0; n < num_frames; n++) {
         YMat = Mat(height, width, CV_8UC1);
         if (color_space == 420) {
-            UMat = Mat(height/2, width/2, CV_8UC1);
-            VMat = Mat(height/2, width/2, CV_8UC1);
+            u = Mat(height/2, width/2, CV_8UC1);
+            v = Mat(height/2, width/2, CV_8UC1);
         } else if (color_space == 422) {
-            UMat = Mat(height, width/2, CV_8UC1);
-            VMat = Mat(height, width/2, CV_8UC1);
+            u = Mat(height, width/2, CV_8UC1);
+            v = Mat(height, width/2, CV_8UC1);
         } else if (color_space == 444) {
-            UMat = Mat(height, width, CV_8UC1);
-            VMat = Mat(height, width, CV_8UC1);
+            u = Mat(height, width, CV_8UC1);
+            v = Mat(height, width, CV_8UC1);
         }
 
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
                 if (i == 0 && j == 0) {
                     YMat.at<uchar>(i, j) = Ydecoded[pixel_idx];
-                    UMat.at<uchar>(i,j) = Cbdecoded[pixel_idx2];
-                    VMat.at<uchar>(i,j) = Crdecoded[pixel_idx2];
+                    u.at<uchar>(i,j) = Cbdecoded[pixel_idx2];
+                    v.at<uchar>(i,j) = Crdecoded[pixel_idx2];
                     pixel_idx++;
                     pixel_idx2++;
                 } else if (i == 0) {
                     YMat.at<uchar>(i, j) = Ydecoded[pixel_idx] + YMat.at<uchar>(i, j-1);
                     if (color_space == 420 || color_space == 422) {
                         if (j < (width/2)) {
-                            UMat.at<uchar>(i,j) = Cbdecoded[pixel_idx2] + UMat.at<uchar>(i, j-1);
-                            VMat.at<uchar>(i,j) = Crdecoded[pixel_idx2] + VMat.at<uchar>(i, j-1);
+                            u.at<uchar>(i,j) = Cbdecoded[pixel_idx2] + u.at<uchar>(i, j-1);
+                            v.at<uchar>(i,j) = Crdecoded[pixel_idx2] + v.at<uchar>(i, j-1);
                             pixel_idx2++;
                         }
                     } else if (color_space == 444) {
-                        UMat.at<uchar>(i,j) = Cbdecoded[pixel_idx2] + UMat.at<uchar>(i, j-1);
-                        VMat.at<uchar>(i,j) = Crdecoded[pixel_idx2] + VMat.at<uchar>(i, j-1);
+                        u.at<uchar>(i,j) = Cbdecoded[pixel_idx2] + u.at<uchar>(i, j-1);
+                        v.at<uchar>(i,j) = Crdecoded[pixel_idx2] + v.at<uchar>(i, j-1);
                         pixel_idx2++;
                     }
                     pixel_idx++;
@@ -230,13 +203,13 @@ int main(int argc, char* argv[]){
                     YMat.at<uchar>(i, j) = Ydecoded[pixel_idx] + YMat.at<uchar>(i-1, j);
                     if (color_space == 420) {
                         if (i < (height/2)) {
-                            UMat.at<uchar>(i,j) = Cbdecoded[pixel_idx2] + UMat.at<uchar>(i-1, j);
-                            VMat.at<uchar>(i,j) = Crdecoded[pixel_idx2] + VMat.at<uchar>(i-1, j);
+                            u.at<uchar>(i,j) = Cbdecoded[pixel_idx2] + u.at<uchar>(i-1, j);
+                            v.at<uchar>(i,j) = Crdecoded[pixel_idx2] + v.at<uchar>(i-1, j);
                             pixel_idx2++;
                         }
                     } else if(color_space == 422 || color_space == 444){
-                        UMat.at<uchar>(i,j) = Cbdecoded[pixel_idx2] + UMat.at<uchar>(i-1, j);
-                        VMat.at<uchar>(i,j) = Crdecoded[pixel_idx2] + VMat.at<uchar>(i-1, j);
+                        u.at<uchar>(i,j) = Cbdecoded[pixel_idx2] + u.at<uchar>(i-1, j);
+                        v.at<uchar>(i,j) = Crdecoded[pixel_idx2] + v.at<uchar>(i-1, j);
                         pixel_idx2++;
                     }
                     pixel_idx++;
@@ -244,19 +217,19 @@ int main(int argc, char* argv[]){
                     YMat.at<uchar>(i, j) = Ydecoded[pixel_idx] + predict(YMat.at<uchar>(i, j-1), YMat.at<uchar>(i-1, j), YMat.at<uchar>(i-1, j-1));
                     if(color_space == 420){
                         if(i < (height/2) && j < (width/2)){
-                            UMat.at<uchar>(i,j) = Cbdecoded[pixel_idx2] + predict(UMat.at<uchar>(i, j-1), UMat.at<uchar>(i-1, j), UMat.at<uchar>(i-1, j-1));
-                            VMat.at<uchar>(i,j) = Crdecoded[pixel_idx2] + predict(VMat.at<uchar>(i, j-1), VMat.at<uchar>(i-1, j), VMat.at<uchar>(i-1, j-1));
+                            u.at<uchar>(i,j) = Cbdecoded[pixel_idx2] + predict(u.at<uchar>(i, j-1), u.at<uchar>(i-1, j), u.at<uchar>(i-1, j-1));
+                            v.at<uchar>(i,j) = Crdecoded[pixel_idx2] + predict(v.at<uchar>(i, j-1), v.at<uchar>(i-1, j), v.at<uchar>(i-1, j-1));
                             pixel_idx2++;
                         }
                     } else if(color_space == 422){
                         if(j < (width/2)){
-                            UMat.at<uchar>(i,j) = Cbdecoded[pixel_idx2] + predict(UMat.at<uchar>(i, j-1), UMat.at<uchar>(i-1, j), UMat.at<uchar>(i-1, j-1));
-                            VMat.at<uchar>(i,j) = Crdecoded[pixel_idx2] + predict(VMat.at<uchar>(i, j-1), VMat.at<uchar>(i-1, j), VMat.at<uchar>(i-1, j-1));
+                            u.at<uchar>(i,j) = Cbdecoded[pixel_idx2] + predict(u.at<uchar>(i, j-1), u.at<uchar>(i-1, j), u.at<uchar>(i-1, j-1));
+                            v.at<uchar>(i,j) = Crdecoded[pixel_idx2] + predict(v.at<uchar>(i, j-1), v.at<uchar>(i-1, j), v.at<uchar>(i-1, j-1));
                             pixel_idx2++;
                         }
                     } else if(color_space == 444){
-                        UMat.at<uchar>(i,j) = Cbdecoded[pixel_idx2] + predict(UMat.at<uchar>(i, j-1), UMat.at<uchar>(i-1, j), UMat.at<uchar>(i-1, j-1));
-                        VMat.at<uchar>(i,j) = Crdecoded[pixel_idx2] + predict(VMat.at<uchar>(i, j-1), VMat.at<uchar>(i-1, j), VMat.at<uchar>(i-1, j-1));
+                        u.at<uchar>(i,j) = Cbdecoded[pixel_idx2] + predict(u.at<uchar>(i, j-1), u.at<uchar>(i-1, j), u.at<uchar>(i-1, j-1));
+                        v.at<uchar>(i,j) = Crdecoded[pixel_idx2] + predict(v.at<uchar>(i, j-1), v.at<uchar>(i-1, j), v.at<uchar>(i-1, j-1));
                         pixel_idx2++;
                     }
                     pixel_idx++;
@@ -275,21 +248,21 @@ int main(int argc, char* argv[]){
             if(color_space == 420){
                 if (i < height/2 && i < width/2) {
                     for(int j = 0; j < width/2; j++){
-                        Cb_vector.push_back(UMat.at<uchar>(i, j));
-                        Cr_vector.push_back(VMat.at<uchar>(i, j));
+                        Cb_vector.push_back(u.at<uchar>(i, j));
+                        Cr_vector.push_back(v.at<uchar>(i, j));
                     }
                 }
             } else if(color_space == 422){
                 if (i < width/2) {
                     for(int j = 0; j < width/2; j++){
-                        Cb_vector.push_back(UMat.at<uchar>(i, j));
-                        Cr_vector.push_back(VMat.at<uchar>(i, j));
+                        Cb_vector.push_back(u.at<uchar>(i, j));
+                        Cr_vector.push_back(v.at<uchar>(i, j));
                     }
                 }
             } else if(color_space == 444){
                 for(int j = 0; j < width; j++){
-                    Cb_vector.push_back(UMat.at<uchar>(i, j));
-                    Cr_vector.push_back(VMat.at<uchar>(i, j));
+                    Cb_vector.push_back(u.at<uchar>(i, j));
+                    Cr_vector.push_back(v.at<uchar>(i, j));
                 }
             }
         }
@@ -321,19 +294,9 @@ int main(int argc, char* argv[]){
         if(n < num_frames - 1) out << "FRAME" << endl;
     }
 
-    //end the timer
-    end2 = clock();
-    elapsed_secs2 = double(end2 - start2) / CLOCKS_PER_SEC * 1000;
-    cout << "Time to undo the predictions and write to file: " << elapsed_secs2 << " ms" << endl;
 
     //close the file
     out.close();
-
-    //end the timer
-    clock_t end = clock();
-    double elapsed_secs = double(end - start) / CLOCKS_PER_SEC;
-    //convert the time to milliseconds
-    elapsed_secs = elapsed_secs * 1000;
-    cout << "Execution time: " << elapsed_secs << " ms" << endl;
+    cout << "File saved in opencv-bin folder << endl;
     return 0;
 }
