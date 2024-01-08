@@ -87,8 +87,7 @@ int main(int argc, char* argv[]){
     vector<short> Ym, Cbm, Crm;
     vector<int> encoded_Ybits, encoded_Cbbits, encoded_Crbits;
 
-    //start a timer
-    clock_t start = clock();
+
 
     vector<int> Ym_vector;
     vector<int> Cbm_vector;
@@ -145,17 +144,17 @@ int main(int argc, char* argv[]){
 
         //Create Mat objects for Y, U, and V
         Mat YMat = Mat(height, width, CV_8UC1);
-        Mat UMat;
-        Mat VMat;
+        Mat u;
+        Mat v;
         if(colorSpace == 420){
-            UMat = Mat(height/2, width/2, CV_8UC1);
-            VMat = Mat(height/2, width/2, CV_8UC1);
+            u = Mat(height/2, width/2, CV_8UC1);
+            v = Mat(height/2, width/2, CV_8UC1);
         } else if(colorSpace == 422){
-            UMat = Mat(height, width/2, CV_8UC1);
-            VMat = Mat(height, width/2, CV_8UC1);
+            u = Mat(height, width/2, CV_8UC1);
+            v = Mat(height, width/2, CV_8UC1);
         } else if(colorSpace == 444){
-            UMat = Mat(height, width, CV_8UC1);
-            VMat = Mat(height, width, CV_8UC1);
+            u = Mat(height, width, CV_8UC1);
+            v = Mat(height, width, CV_8UC1);
         }
         
         //copy the Y, U, and V data into the Mat objects
@@ -165,8 +164,8 @@ int main(int argc, char* argv[]){
                 for(int j = 0; j < width; j++) YMat.at<uchar>(i, j) = Y[i * width + j];
                 if (i < height/2 && i < width/2) {
                     for(int j = 0; j < width/2; j++){
-                        UMat.at<uchar>(i, j) = U[i * width/2 + j];
-                        VMat.at<uchar>(i, j) = V[i * width/2 + j];
+                        u.at<uchar>(i, j) = U[i * width/2 + j];
+                        v.at<uchar>(i, j) = V[i * width/2 + j];
                     }
                 }
             }
@@ -175,8 +174,8 @@ int main(int argc, char* argv[]){
             for(int i = 0; i < height; i++){
                 for(int j = 0; j < width; j++) YMat.at<uchar>(i, j) = Y[i * width + j];
                 for(int j = 0; j < width/2; j++){
-                    UMat.at<uchar>(i, j) = U[i * width/2 + j];
-                    VMat.at<uchar>(i, j) = V[i * width/2 + j];
+                    u.at<uchar>(i, j) = U[i * width/2 + j];
+                    v.at<uchar>(i, j) = V[i * width/2 + j];
                 }
             }
         //444 Color Space
@@ -184,8 +183,8 @@ int main(int argc, char* argv[]){
             for(int i = 0; i < height; i++){
                 for(int j = 0; j < width; j++){
                     YMat.at<uchar>(i, j) = Y[i * width + j];
-                    UMat.at<uchar>(i, j) = U[i * width + j];
-                    VMat.at<uchar>(i, j) = V[i * width + j];
+                    u.at<uchar>(i, j) = U[i * width + j];
+                    v.at<uchar>(i, j) = V[i * width + j];
                 }
             }
         }
@@ -193,8 +192,8 @@ int main(int argc, char* argv[]){
         for(int i = 0; i < height; i++){
             for(int j = 0; j < width; j++){
                 int Y = YMat.at<uchar>(i, j);
-                int U = UMat.at<uchar>(i, j);
-                int V = VMat.at<uchar>(i, j);
+                int U = u.at<uchar>(i, j);
+                int V = v.at<uchar>(i, j);
                 //if its the first pixel of the image, do not use prediction
                 if (i == 0 && j == 0) {
                     Yresiduals.push_back(Y);
@@ -205,24 +204,24 @@ int main(int argc, char* argv[]){
                     Yresiduals.push_back(Y - YMat.at<uchar>(i, j-1));
                     if(colorSpace == 420 || colorSpace == 422){
                         if (j < (width/2)) {
-                            Cbresiduals.push_back(U - UMat.at<uchar>(i, j-1));
-                            Crresiduals.push_back(V - VMat.at<uchar>(i, j-1));
+                            Cbresiduals.push_back(U - u.at<uchar>(i, j-1));
+                            Crresiduals.push_back(V - v.at<uchar>(i, j-1));
                         }
                     } else if(colorSpace == 444){
-                        Cbresiduals.push_back(U - UMat.at<uchar>(i, j-1));
-                        Crresiduals.push_back(V - VMat.at<uchar>(i, j-1));
+                        Cbresiduals.push_back(U - u.at<uchar>(i, j-1));
+                        Crresiduals.push_back(V - v.at<uchar>(i, j-1));
                     }
                 } else if(j==0){
                     //if its the first pixel of the line, use only the pixel above
                     Yresiduals.push_back(Y - YMat.at<uchar>(i-1, j));
                     if (colorSpace == 420){
                         if (i < (height/2)) {
-                            Cbresiduals.push_back(U - UMat.at<uchar>(i-1, j));
-                            Crresiduals.push_back(V - VMat.at<uchar>(i-1, j));
+                            Cbresiduals.push_back(U - u.at<uchar>(i-1, j));
+                            Crresiduals.push_back(V - v.at<uchar>(i-1, j));
                         }
                     } else {
-                        Cbresiduals.push_back(U - UMat.at<uchar>(i-1, j));
-                        Crresiduals.push_back(V - VMat.at<uchar>(i-1, j));
+                        Cbresiduals.push_back(U - u.at<uchar>(i-1, j));
+                        Crresiduals.push_back(V - v.at<uchar>(i-1, j));
                     }
                 } else {
                     //otherwise, use the prediction function
@@ -230,17 +229,17 @@ int main(int argc, char* argv[]){
                     if(colorSpace == 420){
                         if (i < (height/2) && j < (width/2)) {
                             
-                            Cbresiduals.push_back(U - predict(UMat.at<uchar>(i, j-1), UMat.at<uchar>(i-1, j), UMat.at<uchar>(i-1, j-1)));
-                            Crresiduals.push_back(V - predict(VMat.at<uchar>(i, j-1), VMat.at<uchar>(i-1, j), VMat.at<uchar>(i-1, j-1)));
+                            Cbresiduals.push_back(U - predict(u.at<uchar>(i, j-1), u.at<uchar>(i-1, j), u.at<uchar>(i-1, j-1)));
+                            Crresiduals.push_back(V - predict(v.at<uchar>(i, j-1), v.at<uchar>(i-1, j), v.at<uchar>(i-1, j-1)));
                         }
                     } else if(colorSpace == 422){
                         if (j < (width/2)) {
-                            Cbresiduals.push_back(U - predict(UMat.at<uchar>(i, j-1), UMat.at<uchar>(i-1, j), UMat.at<uchar>(i-1, j-1)));
-                            Crresiduals.push_back(V - predict(VMat.at<uchar>(i, j-1), VMat.at<uchar>(i-1, j), VMat.at<uchar>(i-1, j-1)));
+                            Cbresiduals.push_back(U - predict(u.at<uchar>(i, j-1), u.at<uchar>(i-1, j), u.at<uchar>(i-1, j-1)));
+                            Crresiduals.push_back(V - predict(v.at<uchar>(i, j-1), v.at<uchar>(i-1, j), v.at<uchar>(i-1, j-1)));
                         }
                     } else if(colorSpace == 444){
-                        Cbresiduals.push_back(U - predict(UMat.at<uchar>(i, j-1), UMat.at<uchar>(i-1, j), UMat.at<uchar>(i-1, j-1)));
-                        Crresiduals.push_back(V - predict(VMat.at<uchar>(i, j-1), VMat.at<uchar>(i-1, j), VMat.at<uchar>(i-1, j-1)));
+                        Cbresiduals.push_back(U - predict(u.at<uchar>(i, j-1), u.at<uchar>(i-1, j), u.at<uchar>(i-1, j-1)));
+                        Crresiduals.push_back(V - predict(v.at<uchar>(i, j-1), v.at<uchar>(i-1, j), v.at<uchar>(i-1, j-1)));
                     }
                 }   
             }
@@ -399,10 +398,6 @@ int main(int argc, char* argv[]){
     bs.writeBits(bits);
     bs.close();
    
-    //end the timer
-    clock_t end = clock();
-    double elapsed_secs = double(end - start) / CLOCKS_PER_SEC;
-    elapsed_secs = elapsed_secs * 1000;
-    cout << "Execution time: " << elapsed_secs << " ms" << endl;
+    cout << "File saved in opencv-bin folder " << endl;
     return 0;
 }
