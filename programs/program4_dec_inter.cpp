@@ -94,15 +94,6 @@ int main(int argc, char* argv[]){
     int motionXSize = bits_to_int(v_motionXSize);
     int motionYSize = bits_to_int(v_motionYSize);
 
-    //write the header
-    if(color_space != 420)
-        out << "YUV4MPEG2 W" << width << " H" << height << " F" << frame_rate_1 << ":" << frame_rate_2 << " I" << interlace << " A" << aspect_ratio_1 << ":" << aspect_ratio_2 << " C" << color_space << endl;
-    else 
-        out << "YUV4MPEG2 W" << width << " H" << height << " F" << frame_rate_1 << ":" << frame_rate_2 << " I" << interlace << " A" << aspect_ratio_1 << ":" << aspect_ratio_2 << endl;
-
-    //write to the file FRAME
-    out << "FRAME" << endl;
-
     //READING MOTION VECTORS
     vector<int> motionX = bs.readBits(motionXSize);
     vector<int> motionY = bs.readBits(motionYSize);

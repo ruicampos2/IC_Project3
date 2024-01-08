@@ -83,15 +83,6 @@ int main(int argc, char* argv[]){
     int Cbm_size = bits_to_int(v_Cbm_size);
     int Crm_size = bits_to_int(v_Crm_size);
 
-    //write the header
-    if(color_space != 420)
-        out << "YUV4MPEG2 W" << width << " H" << height << " F" << frame_rate_1 << ":" << frame_rate_2 << " I" << interlace << " A" << aspect_ratio_1 << ":" << aspect_ratio_2 << " C" << color_space << endl;
-    else 
-        out << "YUV4MPEG2 W" << width << " H" << height << " F" << frame_rate_1 << ":" << frame_rate_2 << " I" << interlace << " A" << aspect_ratio_1 << ":" << aspect_ratio_2 << endl;
-
-    //write to the file FRAME
-    out << "FRAME" << endl;
-
     //READING M VALUES
     vector<int> Ym;
     for(int i = 0; i < Ym_size; i++){
